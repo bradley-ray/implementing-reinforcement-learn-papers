@@ -52,6 +52,13 @@ def get_loss(obs, act, weights, model):
   # E[log_prob(a|s) * R(tau)]
   return -(log_prob * weights).mean()
 
+def reward_to_go(rewards):
+  n = len(rewards)
+  rtgs = np.zeros_like(rewards)
+  for i in reversed(range(n)):
+    rtgs[i] = rewards[i] + (rtgs[i+1] if i+1 < n else 0)
+  return rtgs
+
 def train_one_epoch(model, env, optimizer, batch_size):
   batch_obs = []
   batch_acts = []
@@ -78,7 +85,8 @@ def train_one_epoch(model, env, optimizer, batch_size):
       batch_lens.append(ep_len)
 
       # R(tau)
-      batch_weights += [ep_ret] * ep_len
+      # batch_weights += [ep_ret] * ep_len
+      batch_weights += list(reward_to_go(ep_rewards))
 
       obs, done, ep_rewards = env.reset()[0], False, []
 
